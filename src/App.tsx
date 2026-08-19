@@ -30,6 +30,49 @@ const PRODUCT_COLORS = [
   '#e35d7a',
 ]
 
+const PRODUCT_PRESETS: Array<Omit<Product, 'id' | 'color'>> = [
+  {
+    name: 'lookup',
+    category: 'figure',
+    length: 12.5,
+    width: 12,
+    height: 15,
+    quantity: 7,
+    weight: 280,
+    unitPriceYen: 5530,
+  },
+  {
+    name: '晚安',
+    category: 'figure',
+    length: 39,
+    width: 17,
+    height: 8,
+    quantity: 3,
+    weight: 808,
+    unitPriceYen: 7920,
+  },
+  {
+    name: '趴趴海贼',
+    category: 'figure',
+    length: 27,
+    width: 15,
+    height: 10,
+    quantity: 6,
+    weight: 700,
+    unitPriceYen: 9720,
+  },
+  {
+    name: '忍喵',
+    category: 'figure',
+    length: 19,
+    width: 9,
+    height: 9.5,
+    quantity: 4,
+    weight: 330,
+    unitPriceYen: 5500,
+  },
+]
+
 const exampleProducts: Product[] = [
   {
     id: 'product-books',
@@ -279,6 +322,22 @@ function App() {
   ) => {
     setProducts((items) =>
       items.map((item) => (item.id === id ? { ...item, [field]: value } : item)),
+    )
+    setResult(null)
+  }
+
+  const updateProductName = (id: string, name: string) => {
+    const preset = PRODUCT_PRESETS.find(
+      (item) => item.name.toLocaleLowerCase() === name.trim().toLocaleLowerCase(),
+    )
+    setProducts((items) =>
+      items.map((item) =>
+        item.id === id
+          ? preset
+            ? { ...item, ...preset, name }
+            : { ...item, name }
+          : item,
+      ),
     )
     setResult(null)
   }
@@ -582,9 +641,10 @@ function App() {
                   <i style={{ background: item.color }} />
                   <input
                     aria-label={`商品 ${index + 1} 名称`}
+                    list="product-preset-names"
                     value={item.name}
                     onChange={(event) =>
-                      updateProduct(item.id, 'name', event.target.value)
+                      updateProductName(item.id, event.target.value)
                     }
                   />
                 </label>
@@ -655,9 +715,15 @@ function App() {
                 </button>
               </div>
             ))}
+            <datalist id="product-preset-names">
+              {PRODUCT_PRESETS.map((preset) => (
+                <option value={preset.name} key={preset.name} />
+              ))}
+            </datalist>
           </div>
           <div className="table-summary">
-            共 <b>{products.length}</b> 种商品，<b>{totalPieces}</b> 件
+            输入 lookup、晚安、趴趴海贼或忍喵可自动填写 · 共{' '}
+            <b>{products.length}</b> 种商品，<b>{totalPieces}</b> 件
           </div>
         </section>
 
