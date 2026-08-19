@@ -238,6 +238,7 @@ function loadBoxes(): BoxType[] {
 function NumberInput({
   value,
   label,
+  mobileLabel,
   integer = false,
   allowZero = false,
   disabled = false,
@@ -245,12 +246,15 @@ function NumberInput({
 }: {
   value: number
   label: string
+  mobileLabel: string
   integer?: boolean
   allowZero?: boolean
   disabled?: boolean
   onChange: (value: number) => void
 }) {
   return (
+    <label className="number-field">
+      <span>{mobileLabel}</span>
     <input
       aria-label={label}
       type="number"
@@ -260,6 +264,7 @@ function NumberInput({
       disabled={disabled}
       onChange={(event) => onChange(Number(event.target.value))}
     />
+    </label>
   )
 }
 
@@ -638,6 +643,7 @@ function App() {
             {products.map((item, index) => (
               <div className="table-row product-grid" key={item.id}>
                 <label className="name-cell">
+                  <span className="mobile-field-label">商品名称</span>
                   <i style={{ background: item.color }} />
                   <input
                     aria-label={`商品 ${index + 1} 名称`}
@@ -648,44 +654,52 @@ function App() {
                     }
                   />
                 </label>
-                <select
-                  aria-label={`${item.name}品类`}
-                  value={item.category}
-                  onChange={(event) =>
-                    updateProduct(
-                      item.id,
-                      'category',
-                      event.target.value as Product['category'],
-                    )
-                  }
-                >
-                  <option value="figure">手办</option>
-                  <option value="plush">玩偶</option>
-                  <option value="other">其他</option>
-                </select>
+                <label className="select-field">
+                  <span>品类</span>
+                  <select
+                    aria-label={`${item.name}品类`}
+                    value={item.category}
+                    onChange={(event) =>
+                      updateProduct(
+                        item.id,
+                        'category',
+                        event.target.value as Product['category'],
+                      )
+                    }
+                  >
+                    <option value="figure">手办</option>
+                    <option value="plush">玩偶</option>
+                    <option value="other">其他</option>
+                  </select>
+                </label>
                 <NumberInput
                   label={`${item.name}长度`}
+                  mobileLabel="长度 (cm)"
                   value={item.length}
                   onChange={(value) => updateProduct(item.id, 'length', value)}
                 />
                 <NumberInput
                   label={`${item.name}宽度`}
+                  mobileLabel="宽度 (cm)"
                   value={item.width}
                   onChange={(value) => updateProduct(item.id, 'width', value)}
                 />
                 <NumberInput
                   label={`${item.name}高度`}
+                  mobileLabel="高度 (cm)"
                   value={item.height}
                   onChange={(value) => updateProduct(item.id, 'height', value)}
                 />
                 <NumberInput
                   label={`${item.name}数量`}
+                  mobileLabel="数量"
                   value={item.quantity}
                   integer
                   onChange={(value) => updateProduct(item.id, 'quantity', value)}
                 />
                 <NumberInput
                   label={`${item.name}单件重量`}
+                  mobileLabel="单件重量 (g)"
                   value={item.weight}
                   integer
                   allowZero
@@ -693,6 +707,7 @@ function App() {
                 />
                 <NumberInput
                   label={`${item.name}单价`}
+                  mobileLabel="单价 (日元)"
                   value={item.unitPriceYen}
                   integer
                   allowZero
@@ -782,6 +797,7 @@ function App() {
             {boxTypes.map((item, index) => (
               <div className="table-row box-grid" key={item.id}>
                 <label className="name-cell box-name">
+                  <span className="mobile-field-label">箱型名称</span>
                   <span className="box-icon">□</span>
                   <input
                     aria-label={`箱型 ${index + 1} 名称`}
@@ -791,41 +807,48 @@ function App() {
                     }
                   />
                 </label>
-                <select
-                  aria-label={`${item.name}所属店铺`}
-                  value={item.store}
-                  disabled={item.cuttableHeight}
-                  onChange={(event) =>
-                    updateBox(
-                      item.id,
-                      'store',
-                      event.target.value as BoxType['store'],
-                    )
-                  }
-                >
-                  <option value="akiba">秋叶原</option>
-                  <option value="ueno">上野</option>
-                </select>
+                <label className="select-field">
+                  <span>所属店铺</span>
+                  <select
+                    aria-label={`${item.name}所属店铺`}
+                    value={item.store}
+                    disabled={item.cuttableHeight}
+                    onChange={(event) =>
+                      updateBox(
+                        item.id,
+                        'store',
+                        event.target.value as BoxType['store'],
+                      )
+                    }
+                  >
+                    <option value="akiba">秋叶原</option>
+                    <option value="ueno">上野</option>
+                  </select>
+                </label>
                 <NumberInput
                   label={`${item.name}内长`}
+                  mobileLabel="内长 (cm)"
                   value={item.length}
                   disabled={item.cuttableHeight}
                   onChange={(value) => updateBox(item.id, 'length', value)}
                 />
                 <NumberInput
                   label={`${item.name}内宽`}
+                  mobileLabel="内宽 (cm)"
                   value={item.width}
                   disabled={item.cuttableHeight}
                   onChange={(value) => updateBox(item.id, 'width', value)}
                 />
                 <NumberInput
                   label={`${item.name}内高`}
+                  mobileLabel="内高 (cm)"
                   value={item.height}
                   disabled={item.cuttableHeight}
                   onChange={(value) => updateBox(item.id, 'height', value)}
                 />
                 <NumberInput
                   label={`${item.name}可用数量`}
+                  mobileLabel="可用数量"
                   value={item.quantity}
                   integer
                   onChange={(value) => updateBox(item.id, 'quantity', value)}

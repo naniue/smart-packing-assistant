@@ -397,6 +397,17 @@ button {
   background-repeat: no-repeat;
 }
 
+.number-field,
+.select-field {
+  min-width: 0;
+}
+
+.number-field > span,
+.select-field > span,
+.mobile-field-label {
+  display: none;
+}
+
 .name-cell {
   display: flex;
   align-items: center;
@@ -1347,15 +1358,22 @@ footer {
   }
 
   main {
-    padding: 0 14px 60px;
+    padding: 0 12px 52px;
   }
 
   .hero-section {
-    padding-top: 55px;
+    padding: 38px 2px 34px;
   }
 
   .hero-section h1 {
-    font-size: 36px;
+    font-size: 32px;
+    letter-spacing: -1.2px;
+  }
+
+  .hero-section p {
+    margin-top: 17px;
+    font-size: 13px;
+    line-height: 1.7;
   }
 
   .hero-section p br {
@@ -1363,11 +1381,12 @@ footer {
   }
 
   .section-heading {
-    align-items: center;
+    align-items: flex-end;
+    margin-bottom: 16px;
   }
 
   .section-heading > div {
-    padding-left: 44px;
+    padding-left: 39px;
   }
 
   .step {
@@ -1375,7 +1394,16 @@ footer {
   }
 
   .section-heading p {
-    max-width: 210px;
+    max-width: 220px;
+    line-height: 1.5;
+  }
+
+  .section-heading h2 {
+    font-size: 21px;
+  }
+
+  .workspace {
+    padding-top: 40px;
   }
 
   .shipping-settings .section-heading {
@@ -1416,40 +1444,98 @@ footer {
     grid-row: 1 / span 2;
   }
 
-  .product-grid,
-  .box-grid {
-    gap: 7px;
-    grid-template-columns: repeat(2, 1fr) 34px;
+  .data-card {
+    overflow: visible;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
   }
 
   .table-head {
     display: none;
   }
 
+  .table-row.product-grid,
+  .table-row.box-grid {
+    position: relative;
+    min-height: 0;
+    margin-bottom: 10px;
+    padding: 15px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px 10px;
+    background: #fff;
+    border: 1px solid #dfe5df;
+    border-radius: 12px;
+    box-shadow: 0 3px 12px rgba(26, 45, 39, 0.04);
+  }
+
+  .table-row.product-grid:last-of-type,
+  .table-row.box-grid:last-of-type {
+    border-bottom: 1px solid #dfe5df;
+  }
+
   .table-row .name-cell {
     grid-column: 1 / -1;
+    padding-right: 34px;
+    display: grid;
+    grid-template-columns: 10px minmax(0, 1fr);
+    gap: 6px 9px;
+  }
+
+  .table-row .box-name {
+    grid-template-columns: 22px minmax(0, 1fr);
+  }
+
+  .mobile-field-label {
+    grid-column: 1 / -1;
+    display: block;
+    color: #718078;
+    font-size: 10px;
+    font-weight: 700;
+  }
+
+  .name-cell i,
+  .box-icon {
+    align-self: center;
+  }
+
+  .number-field,
+  .select-field {
+    display: grid;
+    gap: 5px;
+  }
+
+  .number-field > span,
+  .select-field > span {
+    display: block;
+    color: #718078;
+    font-size: 10px;
+    font-weight: 700;
   }
 
   .table-row input,
   .table-row select {
-    height: 42px;
-  }
-
-  .table-row > input:nth-of-type(3),
-  .table-row > input:nth-of-type(4) {
-    margin-top: 2px;
+    height: 45px;
+    padding: 0 12px;
+    font-size: 15px;
   }
 
   .delete-button {
-    grid-column: 3;
-    grid-row: auto;
+    position: absolute;
+    right: 10px;
+    top: 30px;
+    width: 36px;
+    height: 36px;
   }
 
   .action-panel {
     align-items: stretch;
     flex-direction: column;
     gap: 20px;
-    padding: 22px;
+    padding: 20px;
+    border-radius: 12px;
   }
 
   .choice-explanation {
@@ -1484,23 +1570,34 @@ footer {
     flex: 1 1 100%;
     order: -1;
     margin: 0;
+    min-height: 48px;
+    font-size: 14px;
   }
 
   .stats-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
   }
 
   .stats-grid > div {
-    border-right: 0;
     border-bottom: 1px solid #e6eae6;
+    padding: 17px;
+  }
+
+  .stats-grid > div:nth-child(odd) {
+    border-right: 1px solid #e6eae6;
+  }
+
+  .stats-grid > div:first-child {
+    grid-column: 1 / -1;
+    border-right: 0;
   }
 
   .scene-shell {
-    height: 330px;
+    height: 285px;
   }
 
   .scene-loading {
-    height: 330px;
+    height: 285px;
   }
 
   .rotation-toolbar {
@@ -1533,6 +1630,32 @@ footer {
   .step-item {
     grid-template-columns: 28px 1fr;
     padding: 9px 0;
+  }
+
+  .results {
+    padding-top: 48px;
+  }
+
+  .detail-header {
+    align-items: flex-start;
+    padding: 15px;
+  }
+
+  .detail-header h3 {
+    font-size: 17px;
+  }
+
+  .price-summary strong {
+    font-size: 19px;
+  }
+
+  .box-tabs {
+    padding: 9px;
+  }
+
+  .box-tabs button {
+    min-width: 155px;
+    padding: 11px;
   }
 
   .step-item code {
