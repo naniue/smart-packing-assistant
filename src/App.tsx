@@ -974,7 +974,7 @@ function App() {
                   }
                 }}
               >
-                <span>推荐方案总运费</span>
+                <span>当前方案全部 {result.boxes.length} 个箱子合计</span>
                 <strong>¥{result.totalCostCny.toFixed(2)}</strong>
                 <small>
                   人民币 ¥{result.cnySubtotal.toFixed(2)}
@@ -1080,7 +1080,8 @@ function App() {
                 )}
                 <div className="cost-detail-total">
                   <span>
-                    人民币 ¥{result.cnySubtotal.toFixed(2)}
+                    所有 {result.boxes.length} 个箱子：人民币 ¥
+                    {result.cnySubtotal.toFixed(2)}
                     {result.yenSubtotal > 0 &&
                       ` + JP¥${result.yenSubtotal.toLocaleString()} × ${result.shippingSettings.cnyPer100Yen} ÷ 100`}
                   </span>
