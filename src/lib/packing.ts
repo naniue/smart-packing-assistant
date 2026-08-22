@@ -270,9 +270,15 @@ function canPhysicallyFit(item: Dimensions, box: BoxType) {
 }
 
 function routeMatchesStore(routeId: ShippingRouteId, box: BoxType) {
-  return routeId.startsWith('ueno-')
-    ? box.store === 'ueno'
-    : box.store === 'akiba'
+  if (!routeId.startsWith('ueno-')) return box.store === 'akiba'
+  const horizontalSides = [box.length, box.width].sort((a, b) => a - b)
+  return (
+    box.store === 'ueno' &&
+    box.cuttableHeight === true &&
+    horizontalSides[0] === 40 &&
+    horizontalSides[1] === 50 &&
+    box.height <= 30
+  )
 }
 
 function getBoxVariants(box: BoxType) {

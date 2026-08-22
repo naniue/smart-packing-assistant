@@ -278,6 +278,38 @@ describe('packItems', () => {
     expect(result.singleBoxAlternative).toBeUndefined()
   })
 
+  it('uses the fixed Ueno box and picks the cheaper route from gross weight', () => {
+    const result = packItems(
+      [
+        product({
+          length: 40,
+          width: 50,
+          height: 30,
+          weight: 4000,
+        }),
+      ],
+      [
+        box({
+          id: 'ueno',
+          name: '上野可裁剪箱',
+          length: 40,
+          width: 50,
+          height: 30,
+          store: 'ueno',
+          cuttableHeight: true,
+        }),
+      ],
+      undefined,
+      ['ueno-express', 'ueno-bulky'],
+    )
+
+    expect(result.boxes).toHaveLength(1)
+    expect(result.boxes[0].cardboardWeight).toBeCloseTo(893.33, 2)
+    expect(result.boxes[0].grossWeight).toBeCloseTo(4893.33, 2)
+    expect(result.boxes[0].quote?.routeId).toBe('ueno-bulky')
+    expect(result.totalCostCny).toBe(450)
+  })
+
   it('keeps every Akihabara parcel below 40000 yen', () => {
     const result = packItems(
       [

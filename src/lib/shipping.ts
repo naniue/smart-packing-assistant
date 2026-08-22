@@ -15,14 +15,14 @@ export const SHIPPING_ROUTES = [
     id: 'ueno-express',
     storeName: '上野顺丰店',
     routeName: '极速路线',
-    description: '仅用50×40×最高30cm可裁剪箱；体积重÷6000',
+    description: '仅用40×50×最高30cm可裁剪箱；体积重÷6000',
     enabled: true,
   },
   {
     id: 'ueno-bulky',
     storeName: '上野顺丰店',
     routeName: '抛重路线',
-    description: '仅用50×40×最高30cm可裁剪箱；90元/kg，实重4kg起',
+    description: '仅用40×50×最高30cm可裁剪箱；90元/kg，实重4kg起',
     enabled: true,
   },
   {

@@ -141,8 +141,8 @@ const exampleBoxes: BoxType[] = [
   {
     id: 'box-ueno-cuttable',
     name: '上野可裁剪箱',
-    length: 50,
-    width: 40,
+    length: 40,
+    width: 50,
     height: 30,
     quantity: 99,
     store: 'ueno',
@@ -468,8 +468,7 @@ function App() {
         uenoResult.unpacked.length === 0 && uenoResult.boxes.length > 0
       const useUeno =
         uenoAvailable &&
-        uenoResult.boxes.length === fewestBoxResult.boxes.length &&
-        uenoResult.totalCostCny <= fewestBoxResult.totalCostCny + 15
+        uenoResult.boxes.length === fewestBoxResult.boxes.length
       const bestResult = useUeno
         ? {
             ...uenoResult,
@@ -956,7 +955,7 @@ function App() {
             ))}
               </div>
               <p className="box-store-note">
-                上野线路仅使用 50×40×30cm 箱，高度会按装箱结果向下裁剪；其他预设箱型仅用于秋叶原线路。
+                上野线路仅使用 40×50×30cm 箱，高度会按装箱结果向下裁剪；系统会结合商品、纸箱和体积重量，自动选择极速或抛重路线。
               </p>
             </>
           )}
@@ -1013,7 +1012,7 @@ function App() {
             <span>
               {isCalculating
                 ? '商品较多时需要几秒，请稍候'
-                : '优先使用最少箱数；同箱数价差不超过15元时优先上野顺丰店'}
+                : '优先使用最少箱数；同箱数时优先上野顺丰店并自动选择更合适的路线'}
             </span>
           </div>
           <div className="action-buttons">
@@ -1096,9 +1095,9 @@ function App() {
                 <span>
                   同箱数低价方案为 ¥
                   {result.uenoPreference.cheapestCostCny.toFixed(2)}
-                  ，上野顺丰仅贵 ¥
+                  ，上野顺丰贵 ¥
                   {result.uenoPreference.premiumCny.toFixed(2)}
-                  （不超过15元），因此优先选择速度更快的顺丰。
+                  ，仍优先选择上野顺丰，并已在极速与抛重路线中自动比较。
                 </span>
               </div>
             )}
@@ -1433,7 +1432,7 @@ function App() {
               {!uenoBulkyAlternative?.available ? (
                 <p className="ueno-unavailable">
                   当前商品无法全部使用抛重路线发走。通常是某箱实重不足4kg、尺寸超过
-                  50×40×30cm，或上野箱数量不足。
+                  40×50×30cm，或上野箱数量不足。
                 </p>
               ) : (
                 <>
@@ -1462,7 +1461,7 @@ function App() {
                       <div className="ueno-alt-summary">
                         <div>
                           <b>
-                            箱 {uenoAltBoxIndex + 1}：50×40×
+                            箱 {uenoAltBoxIndex + 1}：40×50×
                             {activeUenoAltBox.boxType.height}cm
                           </b>
                           <span>
