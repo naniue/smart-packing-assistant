@@ -123,7 +123,7 @@ describe('packItems', () => {
     expect(result.totalWeight).toBe(500)
   })
 
-  it('uses multiple smaller boxes when their total shipping cost is lower', () => {
+  it('prefers one box even when two smaller boxes cost less', () => {
     const result = packItems(
       [
         product({
@@ -154,11 +154,9 @@ describe('packItems', () => {
       ],
     )
 
-    expect(result.boxes).toHaveLength(2)
-    expect(result.boxes.every((packed) => packed.boxType.id === 'small')).toBe(
-      true,
-    )
-    expect(result.totalCostCny).toBeCloseTo(153.6)
+    expect(result.boxes).toHaveLength(1)
+    expect(result.boxes[0].boxType.id).toBe('large')
+    expect(result.totalCostCny).toBeCloseTo(192)
   })
 
   it('honors box inventory while completing the shipment', () => {
@@ -239,7 +237,7 @@ describe('packItems', () => {
     )
   })
 
-  it('recognizes 24 matching products fit one Ueno box but explains a cheaper split', () => {
+  it('keeps 24 matching products in one Ueno box instead of a cheaper split', () => {
     const result = packItems(
       [
         product({
@@ -272,12 +270,12 @@ describe('packItems', () => {
       ],
     )
 
-    expect(result.boxes).toHaveLength(2)
+    expect(result.boxes).toHaveLength(1)
     expect(result.boxes.reduce((sum, packed) => sum + packed.placements.length, 0)).toBe(
       24,
     )
-    expect(result.singleBoxAlternative?.boxTypeName).toBe('上野可裁剪箱')
-    expect(result.singleBoxAlternative?.differenceCny).toBeGreaterThan(0)
+    expect(result.boxes[0].boxType.id).toBe('ueno')
+    expect(result.singleBoxAlternative).toBeUndefined()
   })
 
   it('keeps every Akihabara parcel below 40000 yen', () => {

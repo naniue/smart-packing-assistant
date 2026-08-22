@@ -381,10 +381,10 @@ function stateUtilization(state: SearchState) {
 function isBetterComplete(candidate: SearchState, current: SearchState | null) {
   if (!current) return true
   return (
-    candidate.cost < current.cost - EPSILON ||
-    (Math.abs(candidate.cost - current.cost) < EPSILON &&
-      (candidate.boxes.length < current.boxes.length ||
-        (candidate.boxes.length === current.boxes.length &&
+    candidate.boxes.length < current.boxes.length ||
+    (candidate.boxes.length === current.boxes.length &&
+      (candidate.cost < current.cost - EPSILON ||
+        (Math.abs(candidate.cost - current.cost) < EPSILON &&
           stateUtilization(candidate) > stateUtilization(current))))
   )
 }
@@ -478,7 +478,13 @@ export function packItems(
             }
             continue
           }
-          if (bestComplete && nextState.cost >= bestComplete.cost) continue
+          if (
+            bestComplete &&
+            nextState.boxes.length + 1 >= bestComplete.boxes.length &&
+            nextState.cost >= bestComplete.cost
+          ) {
+            continue
+          }
 
           const signature = remainingSignature(
             nextState.remaining,
@@ -496,11 +502,11 @@ export function packItems(
     frontier = [...deduplicated.values()]
       .sort(
         (a, b) =>
+          a.remaining.length - b.remaining.length ||
+          a.boxes.length - b.boxes.length ||
           a.cost +
             estimateRemainingCost(a.remaining) -
-            (b.cost + estimateRemainingCost(b.remaining)) ||
-          a.remaining.length - b.remaining.length ||
-          a.boxes.length - b.boxes.length,
+            (b.cost + estimateRemainingCost(b.remaining)),
       )
       .slice(0, beamWidth)
   }

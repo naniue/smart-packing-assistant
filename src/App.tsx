@@ -1,13 +1,16 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { packItems } from './lib/packing'
 import { tryNextRotation } from './lib/placement'
+import { recommendFreeTopUp } from './lib/topUp'
 import {
   DEFAULT_SHIPPING_SETTINGS,
   SHIPPING_ROUTES,
 } from './lib/shipping'
 import type {
   BoxType,
+  PackedBox,
   PackingResult,
+  Placement,
   Product,
   ShippingQuote,
   ShippingRouteId,
@@ -72,6 +75,12 @@ const PRODUCT_PRESETS: Array<Omit<Product, 'id' | 'color'>> = [
     unitPriceYen: 5500,
   },
 ]
+
+const TOP_UP_PRODUCTS: Product[] = PRODUCT_PRESETS.map((product, index) => ({
+  ...product,
+  id: `preset-${product.name}`,
+  color: PRODUCT_COLORS[index % PRODUCT_COLORS.length],
+}))
 
 const exampleProducts: Product[] = [
   {
@@ -186,6 +195,18 @@ const formatMoney = (quote: ShippingQuote) =>
     : `JP¥${quote.originalPrice.toLocaleString()}`
 const formatWeight = (weight: number) =>
   `${Number(weight.toFixed(2)).toLocaleString()} kg`
+const routeUnavailableReason = (routeId: ShippingRouteId) => {
+  if (routeId === 'ueno-bulky') {
+    return '每箱实重不足4kg、尺寸超过上野可裁剪箱或箱子数量不足'
+  }
+  if (routeId === 'ueno-express') {
+    return '商品尺寸超过上野可裁剪箱或箱子数量不足'
+  }
+  if (routeId === 'akiba-sf') {
+    return '受箱型、0.5～3kg重量范围、商品品类或每箱4万日元限额影响'
+  }
+  return '受箱型、0.5～3kg重量范围或每箱4万日元限额影响'
+}
 
 function loadSaved<T>(key: string, fallback: T): T {
   try {
@@ -277,6 +298,7 @@ interface RouteComparison {
   originalTotal: number
   currency: 'CNY' | 'JPY'
   boxCount: number
+  result: PackingResult
 }
 
 function App() {
@@ -295,6 +317,8 @@ function App() {
   const [showBoxTypes, setShowBoxTypes] = useState(false)
   const [showCostDetails, setShowCostDetails] = useState(false)
   const [routeComparisons, setRouteComparisons] = useState<RouteComparison[]>([])
+  const [uenoAltBoxIndex, setUenoAltBoxIndex] = useState(0)
+  const [showTopUpPlan, setShowTopUpPlan] = useState(false)
   const [error, setError] = useState('')
   const resultRef = useRef<HTMLElement>(null)
 
@@ -435,7 +459,7 @@ function App() {
     setError('')
     setIsCalculating(true)
     window.setTimeout(() => {
-      const cheapestResult = packItems(products, boxTypes, shippingSettings)
+      const fewestBoxResult = packItems(products, boxTypes, shippingSettings)
       const uenoResult = packItems(products, boxTypes, shippingSettings, [
         'ueno-express',
         'ueno-bulky',
@@ -444,19 +468,20 @@ function App() {
         uenoResult.unpacked.length === 0 && uenoResult.boxes.length > 0
       const useUeno =
         uenoAvailable &&
-        uenoResult.totalCostCny <= cheapestResult.totalCostCny + 15
+        uenoResult.boxes.length === fewestBoxResult.boxes.length &&
+        uenoResult.totalCostCny <= fewestBoxResult.totalCostCny + 15
       const bestResult = useUeno
         ? {
             ...uenoResult,
             uenoPreference: {
-              cheapestCostCny: cheapestResult.totalCostCny,
+              cheapestCostCny: fewestBoxResult.totalCostCny,
               premiumCny: Math.max(
                 0,
-                uenoResult.totalCostCny - cheapestResult.totalCostCny,
+                uenoResult.totalCostCny - fewestBoxResult.totalCostCny,
               ),
             },
           }
-        : cheapestResult
+        : fewestBoxResult
       const comparisons = SHIPPING_ROUTES.map((route) => {
         const routeResult = packItems(products, boxTypes, shippingSettings, [
           route.id as ShippingRouteId,
@@ -477,6 +502,7 @@ function App() {
               : routeResult.cnySubtotal,
           currency,
           boxCount: routeResult.boxes.length,
+          result: routeResult,
         }
       })
       setResult(bestResult)
@@ -485,6 +511,8 @@ function App() {
       setSelectedItemId(null)
       setRotationMessage('')
       setShowCostDetails(false)
+      setUenoAltBoxIndex(0)
+      setShowTopUpPlan(false)
       setIsCalculating(false)
       requestAnimationFrame(() =>
         resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }),
@@ -509,6 +537,49 @@ function App() {
   }
 
   const activeBox = result?.boxes[selectedBox]
+  const uenoBulkyAlternative = routeComparisons.find(
+    (comparison) => comparison.routeId === 'ueno-bulky',
+  )
+  const activeUenoAltBox =
+    uenoBulkyAlternative?.result.boxes[uenoAltBoxIndex]
+  const activeTopUpRecommendation = useMemo(
+    () =>
+      activeUenoAltBox
+        ? recommendFreeTopUp(activeUenoAltBox, TOP_UP_PRODUCTS)
+        : null,
+    [activeUenoAltBox],
+  )
+  const uenoAltDisplayBox = useMemo(() => {
+    if (!activeUenoAltBox || !activeTopUpRecommendation) return activeUenoAltBox
+    const addedVolume = activeTopUpRecommendation.placements.reduce(
+      (sum, placement) =>
+        sum +
+        placement.dimensions.length *
+          placement.dimensions.width *
+          placement.dimensions.height,
+      0,
+    )
+    return {
+      ...activeUenoAltBox,
+      placements: [
+        ...activeUenoAltBox.placements,
+        ...activeTopUpRecommendation.placements,
+      ],
+      usedVolume: activeUenoAltBox.usedVolume + addedVolume,
+      utilization:
+        (activeUenoAltBox.usedVolume + addedVolume) /
+        (activeUenoAltBox.boxType.length *
+          activeUenoAltBox.boxType.width *
+          activeUenoAltBox.boxType.height),
+      totalWeight:
+        activeUenoAltBox.totalWeight + activeTopUpRecommendation.totalWeight,
+      grossWeight:
+        activeUenoAltBox.grossWeight + activeTopUpRecommendation.totalWeight,
+      totalValueYen:
+        activeUenoAltBox.totalValueYen +
+        activeTopUpRecommendation.totalValueYen,
+    }
+  }, [activeTopUpRecommendation, activeUenoAltBox])
   const groupedPlacements = useMemo(() => {
     if (!activeBox) return []
     const groups = new Map<
@@ -535,6 +606,21 @@ function App() {
   const selectedPlacement = activeBox?.placements.find(
     (placement) => placement.instanceId === selectedItemId,
   )
+
+  const summarizePlacements = (placements: Placement[]) => {
+    const counts = new Map<string, number>()
+    placements.forEach((placement) => {
+      counts.set(
+        placement.productName,
+        (counts.get(placement.productName) ?? 0) + 1,
+      )
+    })
+    return [...counts.entries()]
+      .map(([name, count]) => `${name} × ${count}`)
+      .join('、')
+  }
+  const summarizeBoxContents = (packedBox: PackedBox) =>
+    summarizePlacements(packedBox.placements)
 
   const selectItem = (instanceId: string) => {
     setSelectedItemId(instanceId)
@@ -927,7 +1013,7 @@ function App() {
             <span>
               {isCalculating
                 ? '商品较多时需要几秒，请稍候'
-                : '先比较总价；价差不超过15元时优先上野顺丰店'}
+                : '优先使用最少箱数；同箱数价差不超过15元时优先上野顺丰店'}
             </span>
           </div>
           <div className="action-buttons">
@@ -955,7 +1041,7 @@ function App() {
               <div>
                 <span className="step">04</span>
                 <h2>推荐装箱方案</h2>
-                <p>已同时比较箱型、箱数、线路价格与顺丰速度偏好</p>
+                <p>能用一箱就不拆箱，再比较线路价格与顺丰速度偏好</p>
               </div>
               <span className="success-badge">计算完成</span>
             </div>
@@ -1008,7 +1094,7 @@ function App() {
               <div className="preference-note">
                 <b>已优先选择上野顺丰店</b>
                 <span>
-                  最低价方案为 ¥
+                  同箱数低价方案为 ¥
                   {result.uenoPreference.cheapestCostCny.toFixed(2)}
                   ，上野顺丰仅贵 ¥
                   {result.uenoPreference.premiumCny.toFixed(2)}
@@ -1046,7 +1132,9 @@ function App() {
                     ) : (
                       <>
                         <strong>不可用</strong>
-                        <small>受箱型、重量、品类或每箱4万日元限额影响</small>
+                        <small>
+                          {routeUnavailableReason(comparison.routeId)}
+                        </small>
                       </>
                     )}
                   </article>
@@ -1320,6 +1408,191 @@ function App() {
                     </ol>
                   </div>
                 </div>
+              </div>
+            )}
+
+            {routeComparisons.length > 0 && (
+              <div className="ueno-alternative">
+              <div className="ueno-alt-heading">
+                <div>
+                  <span>固定线路参考方案</span>
+                  <h3>全部使用上野可裁剪箱 · 顺丰抛重路线</h3>
+                </div>
+                {uenoBulkyAlternative?.available && (
+                  <div>
+                    <strong>
+                      ¥{uenoBulkyAlternative.totalCostCny.toFixed(2)}
+                    </strong>
+                    <small>
+                      {uenoBulkyAlternative.boxCount} 个箱子合计
+                    </small>
+                  </div>
+                )}
+              </div>
+
+              {!uenoBulkyAlternative?.available ? (
+                <p className="ueno-unavailable">
+                  当前商品无法全部使用抛重路线发走。通常是某箱实重不足4kg、尺寸超过
+                  50×40×30cm，或上野箱数量不足。
+                </p>
+              ) : (
+                <>
+                  <div className="ueno-alt-tabs">
+                    {uenoBulkyAlternative.result.boxes.map((packedBox, index) => (
+                      <button
+                        type="button"
+                        className={uenoAltBoxIndex === index ? 'active' : ''}
+                        onClick={() => {
+                          setUenoAltBoxIndex(index)
+                          setShowTopUpPlan(false)
+                        }}
+                        key={packedBox.id}
+                      >
+                        箱 {index + 1}
+                        <small>
+                          50×40×{packedBox.boxType.height}cm ·{' '}
+                          {packedBox.placements.length}件
+                        </small>
+                      </button>
+                    ))}
+                  </div>
+
+                  {activeUenoAltBox && (
+                    <div className="ueno-alt-detail">
+                      <div className="ueno-alt-summary">
+                        <div>
+                          <b>
+                            箱 {uenoAltBoxIndex + 1}：50×40×
+                            {activeUenoAltBox.boxType.height}cm
+                          </b>
+                          <span>
+                            高度从30cm裁至{activeUenoAltBox.boxType.height}cm ·{' '}
+                            {summarizeBoxContents(activeUenoAltBox)}
+                          </span>
+                        </div>
+                        <div>
+                          <strong>
+                            ¥{activeUenoAltBox.quote?.originalPrice.toFixed(2)}
+                          </strong>
+                          <small>{activeUenoAltBox.quote?.formula}</small>
+                        </div>
+                      </div>
+                      {activeTopUpRecommendation &&
+                        activeTopUpRecommendation.placements.length > 0 && (
+                          <div className="topup-trigger">
+                            <div>
+                              <span>
+                                {activeTopUpRecommendation.mode === 'free'
+                                  ? '发现不增加运费的补货机会'
+                                  : '发现提高空间利用率的补货方案'}
+                              </span>
+                              <b>
+                                推荐再装{' '}
+                                {activeTopUpRecommendation.placements.length} 件常用商品
+                              </b>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setShowTopUpPlan((visible) => !visible)
+                              }
+                            >
+                              {showTopUpPlan ? '收起推荐方案' : '查看推荐装箱方案'}
+                            </button>
+                          </div>
+                        )}
+                      <Suspense
+                        fallback={
+                          <div className="scene-loading">正在加载三维示意图…</div>
+                        }
+                      >
+                        <PackingScene
+                          packedBox={
+                            showTopUpPlan && uenoAltDisplayBox
+                              ? uenoAltDisplayBox
+                              : activeUenoAltBox
+                          }
+                          selectedItemId={null}
+                          onSelectItem={() => undefined}
+                        />
+                      </Suspense>
+                      {showTopUpPlan &&
+                        activeTopUpRecommendation &&
+                        activeTopUpRecommendation.placements.length > 0 && (
+                          <div className="topup-recommendation">
+                        <div>
+                          <span>
+                            {activeTopUpRecommendation?.mode === 'free'
+                              ? '不增加运费的补货建议'
+                              : activeTopUpRecommendation?.mode === 'paid'
+                                ? '空间优先的低成本补货建议'
+                                : '补货建议'}
+                          </span>
+                          {activeTopUpRecommendation &&
+                          activeTopUpRecommendation.placements.length > 0 ? (
+                            <>
+                              <strong>
+                                可再装{' '}
+                                {activeTopUpRecommendation.placements.length} 件
+                              </strong>
+                              <p>
+                                {summarizePlacements(
+                                  activeTopUpRecommendation.placements,
+                                ).replaceAll('建议·', '')}
+                                {' · '}新增占用{' '}
+                                {Math.round(
+                                  (activeTopUpRecommendation.totalVolume /
+                                    (activeUenoAltBox.boxType.length *
+                                      activeUenoAltBox.boxType.width *
+                                      activeUenoAltBox.boxType.height)) *
+                                    100,
+                                )}
+                                % 箱体
+                              </p>
+                            </>
+                          ) : (
+                            <strong>暂无可免费加入的常用商品</strong>
+                          )}
+                        </div>
+                        {activeTopUpRecommendation &&
+                          activeTopUpRecommendation.placements.length > 0 && (
+                            <div>
+                              <b>
+                                + JP¥
+                                {activeTopUpRecommendation.totalValueYen.toLocaleString()}
+                              </b>
+                              <small>
+                                增加{' '}
+                                {activeTopUpRecommendation.totalWeight.toLocaleString()}{' '}
+                                g，
+                                {activeTopUpRecommendation.mode === 'free'
+                                  ? `抛重运费仍为 ¥${activeUenoAltBox.quote?.originalPrice.toFixed(2)}`
+                                  : `新增运费 ¥${activeTopUpRecommendation.addedShippingCost.toFixed(2)}，补货后 ¥${activeTopUpRecommendation.finalShippingCost.toFixed(2)}`}
+                              </small>
+                            </div>
+                          )}
+                          </div>
+                        )}
+                      <ol className="ueno-placement-list">
+                        {(showTopUpPlan && uenoAltDisplayBox
+                          ? uenoAltDisplayBox.placements
+                          : activeUenoAltBox.placements
+                        ).map((placement, index) => (
+                          <li key={placement.instanceId}>
+                            <span>{index + 1}</span>
+                            <b>{placement.productName}</b>
+                            <small>
+                              {formatSize(placement.dimensions)} · 坐标 (
+                              {placement.position.x}, {placement.position.y},{' '}
+                              {placement.position.z})
+                            </small>
+                          </li>
+                        ))}
+                      </ol>
+                    </div>
+                  )}
+                </>
+              )}
               </div>
             )}
           </section>
