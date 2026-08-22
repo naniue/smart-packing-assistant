@@ -317,6 +317,12 @@ function App() {
   const [showBoxTypes, setShowBoxTypes] = useState(false)
   const [showCostDetails, setShowCostDetails] = useState(false)
   const [routeComparisons, setRouteComparisons] = useState<RouteComparison[]>([])
+  const [recommendedResult, setRecommendedResult] = useState<PackingResult | null>(
+    null,
+  )
+  const [selectedPlan, setSelectedPlan] = useState<'recommended' | 'single-bulky'>(
+    'recommended',
+  )
   const [uenoAltBoxIndex, setUenoAltBoxIndex] = useState(0)
   const [showTopUpPlan, setShowTopUpPlan] = useState(false)
   const [error, setError] = useState('')
@@ -505,6 +511,8 @@ function App() {
         }
       })
       setResult(bestResult)
+      setRecommendedResult(bestResult)
+      setSelectedPlan('recommended')
       setRouteComparisons(comparisons)
       setSelectedBox(0)
       setSelectedItemId(null)
@@ -539,6 +547,10 @@ function App() {
   const uenoBulkyAlternative = routeComparisons.find(
     (comparison) => comparison.routeId === 'ueno-bulky',
   )
+  const singleBoxBulkyPlan =
+    uenoBulkyAlternative?.available && uenoBulkyAlternative.boxCount === 1
+      ? uenoBulkyAlternative.result
+      : null
   const activeUenoAltBox =
     uenoBulkyAlternative?.result.boxes[uenoAltBoxIndex]
   const activeTopUpRecommendation = useMemo(
@@ -1099,6 +1111,47 @@ function App() {
                   {result.uenoPreference.premiumCny.toFixed(2)}
                   ，仍优先选择上野顺丰，并已在极速与抛重路线中自动比较。
                 </span>
+              </div>
+            )}
+
+            {singleBoxBulkyPlan && recommendedResult && (
+              <div className="plan-switcher">
+                <div>
+                  <span>发货方案选择</span>
+                  <b>可将全部商品装进一个上野箱，指定走抛重路线</b>
+                  <small>
+                    40×50×{singleBoxBulkyPlan.boxes[0].boxType.height}cm ·
+                    计费重量{' '}
+                    {formatWeight(
+                      singleBoxBulkyPlan.boxes[0].quote?.chargeableWeight ?? 0,
+                    )}{' '}
+                    × ¥90
+                  </small>
+                </div>
+                <div className="plan-switcher-actions">
+                  <button
+                    type="button"
+                    className={selectedPlan === 'recommended' ? 'active' : ''}
+                    onClick={() => {
+                      setResult(recommendedResult)
+                      setSelectedPlan('recommended')
+                      setSelectedBox(0)
+                    }}
+                  >
+                    自动推荐
+                  </button>
+                  <button
+                    type="button"
+                    className={selectedPlan === 'single-bulky' ? 'active' : ''}
+                    onClick={() => {
+                      setResult(singleBoxBulkyPlan)
+                      setSelectedPlan('single-bulky')
+                      setSelectedBox(0)
+                    }}
+                  >
+                    全部一箱 · ¥90/kg
+                  </button>
+                </div>
               </div>
             )}
 

@@ -888,6 +888,55 @@ button {
   flex: 0 0 auto;
 }
 
+.plan-switcher {
+  margin-bottom: 20px;
+  padding: 15px 17px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  color: #24483a;
+  background: #edf8f2;
+  border: 1px solid #badbc9;
+  border-radius: 10px;
+}
+
+.plan-switcher > div:first-child {
+  display: grid;
+  gap: 4px;
+}
+
+.plan-switcher span,
+.plan-switcher small {
+  color: #688076;
+  font-size: 9px;
+}
+
+.plan-switcher b {
+  font-size: 12px;
+}
+
+.plan-switcher-actions {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 7px;
+}
+
+.plan-switcher-actions button {
+  padding: 9px 12px;
+  color: #315547;
+  background: #fff;
+  border: 1px solid #b9d2c5;
+  border-radius: 7px;
+  font-size: 10px;
+}
+
+.plan-switcher-actions button.active {
+  color: #fff;
+  background: #1c7c5b;
+  border-color: #1c7c5b;
+}
+
 .result-layout {
   display: grid;
   grid-template-columns: 200px 1fr;
@@ -1788,6 +1837,16 @@ footer {
   .preference-note {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .plan-switcher {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .plan-switcher-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
   }
 
   .cost-detail-row {
